@@ -6,9 +6,10 @@ const handler = new ConvertHandler();
 module.exports = function(app) {
   app.route('/api/convert')
     .get(function(req, res) {
-      const input = req.query.input;
-      const num = handler.getNum(input || "");
-      const unit = handler.getUnit(input || "");
+      const input = req.query.input || "";
+      const num = handler.getNum(input);
+      const unit = handler.getUnit(input);
+
       if (num === "invalid number" && unit === "invalid unit") {
         return res.json("invalid number and unit");
       }
