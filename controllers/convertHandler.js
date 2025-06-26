@@ -1,100 +1,148 @@
+const units = ['L','l','gal','GAL','mi','MI','km','KM','lbs','LBS','kg','KG']
+
 function ConvertHandler() {
-  const units = {
-    gal: { returnUnit: 'L', spell: 'gallons', factor: 3.78541 },
-    l:   { returnUnit: 'gal', spell: 'liters', factor: 1 / 3.78541 },
-    mi:  { returnUnit: 'km', spell: 'miles', factor: 1.60934 },
-    km:  { returnUnit: 'mi', spell: 'kilometers', factor: 1 / 1.60934 },
-    lbs: { returnUnit: 'kg', spell: 'pounds', factor: 0.453592 },
-    kg:  { returnUnit: 'lbs', spell: 'kilograms', factor: 1 / 0.453592 }
-  };
-  const validUnits = ['gal', 'l', 'mi', 'km', 'lbs', 'kg'];
 
   this.getNum = function(input) {
-    let num = input.match(/^[\d.\/]+/);
-    if (!num) return 1;
-    let strNum = num[0];
-    if (strNum.split('/').length > 2) return "invalid number";
-    try {
-      // Permitir fracciones y decimales (ej. 2.5/6)
-      let result = eval(strNum);
-      // No permitir resultados NaN o infinitos
-      return (!isFinite(result) || isNaN(result)) ? "invalid number" : result;
-    } catch {
-      return "invalid number";
+    
+    let result = input.split(/[a-zA-Z]/).join('');
+
+    if(result.replace(/[^\/]/g, '').length >= 2) {
+      return 'invalid number'
     }
+    else if(result.replace(/[^\/.]/g, '').length >= 2) {
+      const arr = result.split('/')
+      return parseFloat(parseFloat(arr[0]) / parseFloat(arr[1]))
+    }
+    else if(result.replace(/[^\/]/g, '').length === 1) {
+      const arr = result.split('/')
+      return parseFloat(parseFloat(arr[0]) / parseFloat(arr[1]))
+    }
+    else if(result === '') {
+      return 1
+    }
+    else if(/\./g.test(result)){
+      return parseFloat(result)
+    }
+    return parseInt(result);
   };
+  
+  this.getUnit = function(input) {    
 
-  this.getUnit = function(input) {
-    let unit = input.match(/[a-zA-Z]+$/);
-    if (!unit) return "invalid unit";
-    unit = unit[0].toLowerCase();
-    if (unit === 'l') return 'L';
-    if (validUnits.includes(unit)) return unit;
-    return "invalid unit";
+    let unit = input.match(/[^\.\d\/]/g).join('')
+    
+    for (let i = 0; i < units.length; i++) {
+      if(units[i] === unit) {
+        if(units[i] === 'L' || units[i] === 'l') return units[i].toUpperCase()
+        return units[i].toLowerCase()
+      }
+    }
+    return 'invalid unit';
   };
-
+  
   this.getReturnUnit = function(initUnit) {
-    if (!initUnit || typeof initUnit !== 'string') return "invalid unit";
-    let unit = initUnit.toLowerCase();
-    if (unit === 'l' || unit === 'L') return 'gal';
-    if (!units[unit]) return "invalid unit";
-    return units[unit].returnUnit;
+    let result;
+
+    let u = this.getUnit(initUnit)
+    if(u !== 'invalid unit'){
+        switch(u){
+          case 'L':
+            result = 'gal'
+            break;
+          case 'gal':
+            result = 'L'
+            break;
+          case 'mi':
+            result = 'km'
+            break;
+          case 'km':
+            result = 'mi'
+            break;  
+          case 'lbs':
+            result = 'kg'
+            break;
+          case 'kg':
+            result = 'lbs'
+            break;
+        }
+    }
+    return result === undefined ? 'invalid unit' : result;
   };
 
   this.spellOutUnit = function(unit) {
-    let key = unit.toLowerCase();
-    if (key === 'l') key = 'l';
-    if (units[key]) return units[key].spell;
-    return "invalid unit";
-  };
+    let result;
 
-  this.normalizeUnit = function(unit) {
-    // Siempre devolver 'l' como 'L', lo demás en minúsculas
-    if (!unit) return '';
-    unit = unit.toLowerCase();
-    return unit === 'l' ? 'L' : unit;
+    let u = this.getUnit(unit)
+    if(u !== 'invalid unit'){
+        switch(u){
+          case 'L':
+            result = 'liters'
+            break;
+          case 'gal':
+            result = 'gallons'
+            break;
+          case 'mi':
+            result = 'miles'
+            break;
+          case 'km':
+            result = 'kilometers'
+            break;  
+          case 'lbs':
+            result = 'pounds'
+            break;
+          case 'kg':
+            result = 'kilograms'
+            break;
+        }
+    }
+    return result === undefined ? 'invalid unit' : result;
   };
-
+  
   this.convert = function(initNum, initUnit) {
-    let key = initUnit.toLowerCase();
-    if (!units[key]) return "invalid unit";
-    let factor = units[key].factor;
-    return Number((initNum * factor).toFixed(5));
+    const galToL = 3.78541;
+    const lbsToKg = 0.453592;
+    const miToKm = 1.60934;
+    let result;
+    
+    let iN = initNum
+    let iU = this.getUnit(initUnit)
+
+    if(iN !== 'invalid number' && iU !== 'invalid unit') {
+      switch(iU){
+        case 'gal':
+          result = iN * galToL
+          break
+        case 'L':
+          result = iN / galToL
+          break
+        case 'lbs':
+          result = iN * lbsToKg
+          break
+        case 'kg':
+          result = iN / lbsToKg
+          break
+        case 'mi':
+          result = iN * miToKm
+          break
+        case 'km':
+          result = iN / miToKm
+          break
+      }
+    }
+    return result ? result : 'Conversion error';
   };
-
-  this.getString = function(initNum, initUnit, returnNum, returnUnit) {
-    // Deletrear las unidades correctamente y normalizar
-    let normInit = this.normalizeUnit(initUnit);
-    let normReturn = this.normalizeUnit(returnUnit);
-    let initSpell = this.spellOutUnit(normInit);
-    let returnSpell = this.spellOutUnit(normReturn);
-    return `${initNum} ${initSpell} converts to ${returnNum} ${returnSpell}`;
-  };
-
-  this.getConversion = function(input) {
-    let num = this.getNum(input);
-    let unit = this.getUnit(input);
-
-    // Validaciones combinadas
-    let invalidNum = num === "invalid number";
-    let invalidUnit = unit === "invalid unit";
-    if (invalidNum && invalidUnit) return "invalid number and unit";
-    if (invalidNum) return "invalid number";
-    if (invalidUnit) return "invalid unit";
-
-    let returnUnit = this.getReturnUnit(unit);
-    if (returnUnit === "invalid unit") return "invalid unit";
-    let returnNum = this.convert(num, unit);
-
-    // Notar que 'L' se representa en mayúsculas en el returnUnit
+  
+  this.getString = function(initNum, initUnit, returnNum, returnUnit) {    
+    returnNum = parseFloat(returnNum.toFixed(5))
     return {
-      initNum: num,
-      initUnit: this.normalizeUnit(unit),
-      returnNum,
-      returnUnit: this.normalizeUnit(returnUnit),
-      string: this.getString(num, unit, returnNum, returnUnit)
-    };
+            initNum: initNum,
+            initUnit: initUnit, 
+            returnNum: returnNum,
+            returnUnit: returnUnit,
+            string:
+              `${initNum} ${this.spellOutUnit(initUnit)} converts to ${returnNum.toFixed(5)} ${this.spellOutUnit(returnUnit)}`
+          }
   };
+  
 }
 
 module.exports = ConvertHandler;
