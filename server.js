@@ -13,8 +13,10 @@ app.use(cors({origin: '*'}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Rutas API
 apiRoutes(app);
 
+// Puerto y escucha
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
   console.log('Listening on port ' + port);
