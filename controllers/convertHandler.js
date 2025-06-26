@@ -1,5 +1,4 @@
 function ConvertHandler() {
-  // Mapeo de unidades y factores de conversión
   const units = {
     gal: { returnUnit: 'L', spell: 'gallons', factor: 3.78541 },
     l:   { returnUnit: 'gal', spell: 'liters', factor: 1 / 3.78541 },
@@ -11,17 +10,16 @@ function ConvertHandler() {
   const validUnits = ['gal', 'l', 'mi', 'km', 'lbs', 'kg'];
 
   this.getNum = function(input) {
-    let result;
     let num = input.match(/^[\d.\/]+/);
     if (!num) return 1;
     let strNum = num[0];
     if (strNum.split('/').length > 2) return "invalid number";
     try {
-      result = eval(strNum);
-    } catch (e) {
+      let result = eval(strNum);
+      return isNaN(result) ? "invalid number" : result;
+    } catch {
       return "invalid number";
     }
-    return isNaN(result) ? "invalid number" : result;
   };
 
   this.getUnit = function(input) {
