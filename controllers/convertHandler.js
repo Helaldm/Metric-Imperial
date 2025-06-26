@@ -15,8 +15,10 @@ function ConvertHandler() {
     let strNum = num[0];
     if (strNum.split('/').length > 2) return "invalid number";
     try {
+      // Permitir fracciones y decimales (ej. 2.5/6)
       let result = eval(strNum);
-      return isNaN(result) ? "invalid number" : result;
+      // No permitir resultados NaN o infinitos
+      return (!isFinite(result) || isNaN(result)) ? "invalid number" : result;
     } catch {
       return "invalid number";
     }
@@ -32,8 +34,9 @@ function ConvertHandler() {
   };
 
   this.getReturnUnit = function(initUnit) {
+    if (!initUnit || typeof initUnit !== 'string') return "invalid unit";
     let unit = initUnit.toLowerCase();
-    if (unit === 'l') unit = 'l';
+    if (unit === 'l' || unit === 'L') return 'gal';
     if (!units[unit]) return "invalid unit";
     return units[unit].returnUnit;
   };
@@ -45,6 +48,13 @@ function ConvertHandler() {
     return "invalid unit";
   };
 
+  this.normalizeUnit = function(unit) {
+    // Siempre devolver 'l' como 'L', lo demás en minúsculas
+    if (!unit) return '';
+    unit = unit.toLowerCase();
+    return unit === 'l' ? 'L' : unit;
+  };
+
   this.convert = function(initNum, initUnit) {
     let key = initUnit.toLowerCase();
     if (!units[key]) return "invalid unit";
@@ -53,7 +63,37 @@ function ConvertHandler() {
   };
 
   this.getString = function(initNum, initUnit, returnNum, returnUnit) {
-    return `${initNum} ${this.spellOutUnit(initUnit)} converts to ${returnNum} ${this.spellOutUnit(returnUnit)}`;
+    // Deletrear las unidades correctamente y normalizar
+    let normInit = this.normalizeUnit(initUnit);
+    let normReturn = this.normalizeUnit(returnUnit);
+    let initSpell = this.spellOutUnit(normInit);
+    let returnSpell = this.spellOutUnit(normReturn);
+    return `${initNum} ${initSpell} converts to ${returnNum} ${returnSpell}`;
+  };
+
+  this.getConversion = function(input) {
+    let num = this.getNum(input);
+    let unit = this.getUnit(input);
+
+    // Validaciones combinadas
+    let invalidNum = num === "invalid number";
+    let invalidUnit = unit === "invalid unit";
+    if (invalidNum && invalidUnit) return "invalid number and unit";
+    if (invalidNum) return "invalid number";
+    if (invalidUnit) return "invalid unit";
+
+    let returnUnit = this.getReturnUnit(unit);
+    if (returnUnit === "invalid unit") return "invalid unit";
+    let returnNum = this.convert(num, unit);
+
+    // Notar que 'L' se representa en mayúsculas en el returnUnit
+    return {
+      initNum: num,
+      initUnit: this.normalizeUnit(unit),
+      returnNum,
+      returnUnit: this.normalizeUnit(returnUnit),
+      string: this.getString(num, unit, returnNum, returnUnit)
+    };
   };
 }
 
